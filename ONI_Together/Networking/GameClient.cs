@@ -317,9 +317,9 @@ namespace ONI_Together.Networking
 				}
 				else
 				{
-DebugConsole.Log("[GameClient] Hard sync in progress, sending ready status");
-				// Tell the host we're ready
-				ReadyStateSyncer.Instance?.RequestSetReadyState(ClientReadyState.Ready);
+					DebugConsole.Log("[GameClient] Hard sync in progress, sending ready status");
+					// Tell the host we're ready
+					ReadyStateSyncer.Instance?.RequestSetReadyState(ClientReadyState.Ready);
 				}
 			}
 			else if (Utils.IsInGame())
