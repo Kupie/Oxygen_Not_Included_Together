@@ -1,7 +1,5 @@
-using HarmonyLib;
 using ONI_Together.DebugTools;
 using ONI_Together.Networking.Packets.World;
-using System.Collections.Generic;
 using Shared.Profiling;
 using UnityEngine;
 
@@ -52,16 +50,12 @@ namespace ONI_Together.Networking.Synchronization
 
 			var packet = new ResourceCountPacket();
 
-			var field = Traverse.Create(discovered).Field("discoveredResources").GetValue<HashSet<Tag>>();
-			if (field != null)
+			foreach (var tag in discovered.GetDiscovered())
 			{
-				foreach (var tag in field)
+				float amount = world.worldInventory.GetAmount(tag, false);
+				if (amount > 0)
 				{
-					float amount = world.worldInventory.GetAmount(tag, false);
-					if (amount > 0)
-					{
-						packet.Resources[tag.Name] = amount;
-					}
+					packet.Resources[tag.Name] = amount;
 				}
 			}
 

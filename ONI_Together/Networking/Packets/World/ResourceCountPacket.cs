@@ -1,4 +1,3 @@
-using HarmonyLib;
 using ONI_Together.DebugTools;
 using ONI_Together.Networking.Packets.Architecture;
 using System;
@@ -92,26 +91,24 @@ namespace ONI_Together.Networking.Packets.World
 		}
 
 		/// <summary>
-		/// Writes the authoritative amount directly into WorldInventory's real backing store
-		/// (not just the value GetAmount() displays) so build costs, ration checks, and every
-		/// other system that reads WorldInventory see the corrected number too.
+		/// Writes the authoritative amount directly into WorldInventory's accessible-amounts
+		/// cache (via the public GetAccessibleAmounts(), confirmed against a decompiled game
+		/// assembly - no reflection needed) instead of shadowing GetAmount() through a Harmony
+		/// prefix, so build costs, ration checks, and every other system that reads
+		/// WorldInventory see the corrected number too.
 		///
-		/// UNVERIFIED: WorldInventory does not appear to expose a public
-		/// AddResource/ConsumeResource-style method for adjusting a resource total without a
-		/// backing Pickupable, so this falls back to reflecting into the private dictionary
-		/// backing GetAmount(), mirroring how ResourceSyncer.HostUpdate already reflects into
-		/// DiscoveredResources' private discoveredResources field. The exact field name below
-		/// is a best-effort guess - it has not been confirmed against a decompiled game
-		/// assembly, so this logs loudly and no-ops if the field can't be found rather than
-		/// silently writing to the wrong place.
-		///
-		/// Also note WorldInventory's totals are themselves a cache mirroring real Pickupable
-		/// objects physically present in the world. Overwriting the cache corrects what other
-		/// systems read right away, but doesn't create or destroy the underlying objects, so a
-		/// large persistent drift can reappear the moment a local pickup/consume event
-		/// recalculates the cache from an inconsistent baseline. The periodic broadcast masks
-		/// that by re-applying the correction on every interval, but this is not a substitute
-		/// for fixing the root cause of the drift.
+		/// IMPORTANT CAVEAT (confirmed by decompile, not guessed): accessibleAmounts is not a
+		/// stable value - WorldInventory.Update() recomputes it for one discovered tag per
+		/// frame, in round-robin order, from the real Pickupable objects it currently tracks
+		/// for that tag. Any tag the client already has at least one real Pickupable for will
+		/// have our correction overwritten back to the true local (drifted) sum the next time
+		/// that tag's turn comes up in the round-robin - i.e. within roughly
+		/// (tag count / 60) seconds, not on the next broadcast interval. The correction only
+		/// "sticks" for tags the client has zero locally-tracked Pickupables for at all (those
+		/// aren't keys in WorldInventory.Inventory, so Update() never touches them) - which is
+		/// a narrower case than "any drifted resource total". This does not create or destroy
+		/// the underlying game objects either way, so it's a display/logic-check patch over
+		/// the cache, not a fix for the actual desync in what Pickupables exist locally.
 		/// </summary>
 		private static bool CorrectWorldInventoryAmount(WorldInventory inventory, Tag tag, float authoritativeAmount)
 		{
@@ -122,17 +119,7 @@ namespace ONI_Together.Networking.Packets.World
 			if (Mathf.Abs(delta) < MIN_CORRECTION_DELTA)
 				return false;
 
-			var traverse = Traverse.Create(inventory).Field("accessible_amounts");
-			if (!traverse.FieldExists())
-				traverse = Traverse.Create(inventory).Field("amounts");
-
-			if (!traverse.FieldExists())
-			{
-				DebugConsole.LogWarning($"[ResourceCountPacket] Could not locate WorldInventory's amount backing field for {tag.Name} - resync skipped for this tag.");
-				return false;
-			}
-
-			var amounts = traverse.GetValue<Dictionary<Tag, float>>();
+			var amounts = inventory.GetAccessibleAmounts();
 			if (amounts == null)
 				return false;
 
