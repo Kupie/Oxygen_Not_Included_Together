@@ -54,6 +54,14 @@ namespace ONI_Together
             set => Host.Server.HardSyncAtCycleStart = value;
         }
 
+        [Option("STRINGS.UI.CONFIGURATION.TITLES.HOST_SETTINGS.SERVER_SETTINGS.HOST_RELOADS_ON_HARD_SYNC", "STRINGS.UI.CONFIGURATION.TOOLTIPS.HOST_SETTINGS.SERVER_SETTINGS.HOST_RELOADS_ON_HARD_SYNC", "STRINGS.UI.CONFIGURATION.HEADERS.A_HOST_SETTINGS")]
+        [JsonIgnore]
+        public bool HostReloadsOnHardSync
+        {
+            get => Host.Server.HostReloadsOnHardSync;
+            set => Host.Server.HostReloadsOnHardSync = value;
+        }
+
         [Option("STRINGS.UI.CONFIGURATION.TITLES.HOST_SETTINGS.SERVER_SETTINGS.PAUSE_SIM_ON_PLAYER_DISCONNECT", "STRINGS.UI.CONFIGURATION.TOOLTIPS.HOST_SETTINGS.SERVER_SETTINGS.PAUSE_SIM_ON_PLAYER_DISCONNECT", "STRINGS.UI.CONFIGURATION.HEADERS.A_HOST_SETTINGS")]
         [JsonIgnore]
         public bool PauseSimOnPlayerDisconnect
@@ -287,6 +295,7 @@ namespace ONI_Together
         [JsonProperty] public bool PauseSimOnPlayerDisconnect { get; set; } = false;
         [JsonProperty] public ServerTickRate TickRate { get; set; } = ServerTickRate.TPS_60;
         [JsonProperty] public int ForceInventoryResyncSeconds { get; set; } = 0;
+        [JsonProperty] public bool HostReloadsOnHardSync { get; set; } = false;
     }
 
     public enum ServerTickRate

@@ -75,6 +75,15 @@ namespace ONI_Together.Networking
 			// With the ready state I do not think this is needed anymore
 			//SpeedControlScreen.Instance?.Unpause(false);
 			//MultiplayerOverlay.Close();
+
+			if (ONI_Together.Configuration.Instance.HostReloadsOnHardSync)
+			{
+				// The save file at this path was already written to disk by the
+				// SaveHelper.GetWorldSave() calls above (used to send it to clients) -
+				// reuse that same path instead of writing a second save.
+				string path = SaveLoader.GetActiveSaveFilePath();
+				SaveHelper.RequestHostWorldReload(path);
+			}
 		}
 	}
 }

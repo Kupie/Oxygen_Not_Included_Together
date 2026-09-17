@@ -80,7 +80,7 @@ namespace ONI_Together.Networking.OxySync.Components
 			if (!isServer)
 				return;
 
-			if (senderId == MultiplayerSession.HostUserID)
+			if (senderId == MultiplayerSession.HostUserID && !ONI_Together.Configuration.Instance.HostReloadsOnHardSync)
 				return;
 
 			var readyState = (ClientReadyState)state;

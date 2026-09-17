@@ -5,6 +5,7 @@ using ONI_Together.Misc.World;
 using ONI_Together.Networking;
 using ONI_Together.Networking.Components;
 using ONI_Together.Networking.OxySync.Components.Tools;
+using ONI_Together.Networking.States;
 using ONI_Together.UI;
 using Shared.Profiling;
 
@@ -70,6 +71,14 @@ namespace ONI_Together.Patches.GamePatches
       Game.Instance.gameObject.AddComponent<LogicPortManager>();
 
       MoveToLocationToolSyncer.RegisterNetId(Game.Instance.gameObject);
+
+      // HostReloadsOnHardSync: the host just went through its own Unready -> reload cycle
+      // (see GameServerHardSync.PerformHardSync) - report it back as Ready now that the
+      // reload has finished, same as a client would after reconnecting.
+      if (MultiplayerSession.IsHost && ONI_Together.Configuration.Instance.HostReloadsOnHardSync)
+      {
+        ReadyManager.SetHostReadyState(ClientReadyState.Ready);
+      }
     }
   }
 }

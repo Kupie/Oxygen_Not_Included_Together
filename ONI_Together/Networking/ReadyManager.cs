@@ -119,12 +119,18 @@ namespace ONI_Together.Networking
 			if (!MultiplayerSession.IsHost)
 				return;
 
-			if (MultiplayerSession.ConnectedPlayers.TryGetValue(MultiplayerSession.HostUserID, out var host))
+			// Normally the host is always considered ready and is excluded from the unready
+			// gate below. When HostReloadsOnHardSync is enabled the host reloads its own save
+			// too, so it needs to go through the same Unready -> reload -> Ready lifecycle as
+			// everyone else instead of being hardcoded ready throughout.
+			bool hostParticipates = ONI_Together.Configuration.Instance.HostReloadsOnHardSync;
+
+			if (!hostParticipates && MultiplayerSession.ConnectedPlayers.TryGetValue(MultiplayerSession.HostUserID, out var host))
 				host.readyState = ClientReadyState.Ready; // Host is always ready
 
 			foreach (MultiplayerPlayer player in MultiplayerSession.ConnectedPlayers.Values)
 			{
-				if (player.PlayerId == MultiplayerSession.HostUserID)
+				if (!hostParticipates && player.PlayerId == MultiplayerSession.HostUserID)
 					continue;
 
 				player.readyState = ClientReadyState.Unready;
@@ -140,10 +146,30 @@ namespace ONI_Together.Networking
 		{
 			using var _ = Profiler.Scope();
 
-			if (player.PlayerId == MultiplayerSession.HostUserID)
+			if (player.PlayerId == MultiplayerSession.HostUserID && !ONI_Together.Configuration.Instance.HostReloadsOnHardSync)
 				return;
 
 			player.readyState = state;
+		}
+
+		/// <summary>
+		/// HOST ONLY - Directly sets the host's own ready state, bypassing the "host is
+		/// always ready" shortcuts in MarkAllAsUnready/SetPlayerReadyState/
+		/// ReadyStateSyncer.CmdSetReadyState. Used when HostReloadsOnHardSync is enabled, once
+		/// the host's own reload has completed (see GameOnSpawnPatch).
+		/// </summary>
+		public static void SetHostReadyState(ClientReadyState state)
+		{
+			using var _ = Profiler.Scope();
+
+			if (!MultiplayerSession.IsHost)
+				return;
+
+			if (!MultiplayerSession.ConnectedPlayers.TryGetValue(MultiplayerSession.HostUserID, out var host))
+				return;
+
+			host.readyState = state;
+			RefreshReadyState();
 		}
 
 		public static void RefreshScreen()

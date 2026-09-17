@@ -99,6 +99,32 @@ public static class SaveHelper
 
 		LoadScreen.DoLoad(path);
 	}
+
+	/// <summary>
+	/// HOST ONLY - Reloads the host's own game from the given save path when
+	/// HostReloadsOnHardSync is enabled. Unlike RequestWorldLoad/LoadWorldSave, this skips the
+	/// GameClient.Disconnect()/reconnect dance entirely, since the host isn't a client of
+	/// itself - it just reloads the scene directly.
+	///
+	/// UNVERIFIED: this is the first time the host reloads its own scene mid-session (only
+	/// clients have ever done this before). Whether the transport/server layer's live
+	/// connection and NetworkIdentity state actually survives LoadScreen.DoLoad on the host
+	/// has not been tested against a real running game with connected clients.
+	/// </summary>
+	public static void RequestHostWorldReload(string path)
+	{
+		using var _ = Profiler.Scope();
+
+		if (!File.Exists(path))
+		{
+			DebugConsole.LogError($"[SaveHelper] Host reload requested but save file not found: {path}");
+			return;
+		}
+
+		DebugConsole.Log($"[SaveHelper] Host reloading its own save for hard sync: {path}");
+		LoadScreen.DoLoad(path);
+	}
+
 	public static void ShowMessageAndReturnToMainMenu(string msg)
 	{
 		using var _ = Profiler.Scope();
