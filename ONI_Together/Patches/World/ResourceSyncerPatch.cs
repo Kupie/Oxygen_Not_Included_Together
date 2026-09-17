@@ -22,11 +22,6 @@ namespace ONI_Together.Patches.World
 					__instance.gameObject.AddComponent<ResourceSyncer>();
 				}
 			}
-			else
-			{
-				// Client: Clear stale resources
-				ResourceSyncer.ClientResources.Clear();
-			}
 		}
 	}
 }

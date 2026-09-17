@@ -70,6 +70,14 @@ namespace ONI_Together
             set => Host.Server.TickRate = value;
         }
 
+        [Option("STRINGS.UI.CONFIGURATION.TITLES.HOST_SETTINGS.SERVER_SETTINGS.FORCE_INVENTORY_RESYNC_SECONDS", "STRINGS.UI.CONFIGURATION.TOOLTIPS.HOST_SETTINGS.SERVER_SETTINGS.FORCE_INVENTORY_RESYNC_SECONDS", "STRINGS.UI.CONFIGURATION.HEADERS.A_HOST_SETTINGS")]
+        [JsonIgnore]
+        public int ForceInventoryResyncSeconds
+        {
+            get => Host.Server.ForceInventoryResyncSeconds;
+            set => Host.Server.ForceInventoryResyncSeconds = value <= 0 ? 0 : Mathf.Clamp(value, 15, 300);
+        }
+
         [Option("STRINGS.UI.CONFIGURATION.TITLES.CLIENT_SETTINGS.MAX_MESSAGES_PER_POLL", "STRINGS.UI.CONFIGURATION.TOOLTIPS.CLIENT_SETTINGS.MAX_MESSAGES_PER_POLL", "STRINGS.UI.CONFIGURATION.HEADERS.B_CLIENT_SETTINGS")]
         [JsonIgnore]
         public int ClientMaxMessagesPerPoll
@@ -278,6 +286,7 @@ namespace ONI_Together
         [JsonProperty] public bool HardSyncAtCycleStart { get; set; } = false;
         [JsonProperty] public bool PauseSimOnPlayerDisconnect { get; set; } = false;
         [JsonProperty] public ServerTickRate TickRate { get; set; } = ServerTickRate.TPS_60;
+        [JsonProperty] public int ForceInventoryResyncSeconds { get; set; } = 0;
     }
 
     public enum ServerTickRate

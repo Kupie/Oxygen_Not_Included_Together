@@ -1,4 +1,5 @@
 using HarmonyLib;
+using ONI_Together.DebugTools;
 using ONI_Together.Networking.Packets.World;
 using System.Collections.Generic;
 using Shared.Profiling;
@@ -6,56 +7,50 @@ using UnityEngine;
 
 namespace ONI_Together.Networking.Synchronization
 {
+	/// <summary>
+	/// HOST ONLY - Periodically broadcasts the authoritative world inventory totals to all
+	/// clients so their local simulation drift gets quietly corrected in the background.
+	/// This is a lightweight periodic resync, not a GameServerHardSync - it never pauses the
+	/// game or transfers a save file.
+	/// </summary>
 	public class ResourceSyncer : MonoBehaviour
 	{
-		public static Dictionary<string, float> ClientResources = new Dictionary<string, float>();
-
 		private float _lastSendTime;
-		private const float SYNC_INTERVAL = 3.0f; // Sync every 3 seconds, not critical
 
 		private void Update()
 		{
-			// Disabled - world inventory sync not working correctly
-			return;
+			using var _ = Profiler.Scope();
 
-			/*
-			if (!MultiplayerSession.InSession) return;
+			if (!MultiplayerSession.IsHost)
+				return;
 
-			if (MultiplayerSession.IsHost)
-			{
-				HostUpdate();
-			}
-			*/
+			int intervalSeconds = ONI_Together.Configuration.Instance.ForceInventoryResyncSeconds;
+			if (intervalSeconds <= 0)
+				return;
+
+			if (Time.unscaledTime - _lastSendTime < intervalSeconds)
+				return;
+
+			_lastSendTime = Time.unscaledTime;
+			HostUpdate();
 		}
 
 		private void HostUpdate()
 		{
 			using var _ = Profiler.Scope();
 
-			if (Time.time - _lastSendTime < SYNC_INTERVAL) return;
+			if (!MultiplayerSession.IsHost)
+				return;
 
-			var world = ClusterManager.Instance.activeWorld;
-			if (world == null) return;
-
-			// Scan discovered resources
-			// Assuming we want to sync EVERYTHING discovered.
-			// Access DiscoveredResources or iterate WorldInventory?
-			// WorldInventory has the amounts.
-
-			// We need a list of tags to check.
-			// DiscoveredResources.Instance.GetDiscovered() returns a set of Tag.
+			var world = ClusterManager.Instance?.activeWorld;
+			if (world == null)
+				return;
 
 			var discovered = DiscoveredResources.Instance;
-			if (discovered == null) return;
-
-			// Access private keys? Or iterate all known Element/Item tags?
-			// Simpler: Access Assets.GetPrefabsWithTag?
-			// DiscoveredResources actually holds the list of what we care about.
+			if (discovered == null)
+				return;
 
 			var packet = new ResourceCountPacket();
-
-			// Just scan elements for now as a test? Or try to reflect discovered list.
-			// Reflection: DiscoveredResources.discoveredResources (HashSet<Tag>)
 
 			var field = Traverse.Create(discovered).Field("discoveredResources").GetValue<HashSet<Tag>>();
 			if (field != null)
@@ -70,33 +65,11 @@ namespace ONI_Together.Networking.Synchronization
 				}
 			}
 
-			if (packet.Resources.Count > 0)
-			{
-				PacketSender.SendToAllClients(packet);
-				// DebugConsole.Log($"[ResourceSyncer] Sent {packet.Resources.Count} resources.");
-			}
+			if (packet.Resources.Count == 0)
+				return;
 
-			_lastSendTime = Time.time;
-		}
-	}
-
-	// Client-side patch: Override WorldInventory.GetAmount to return our synced values if we are Client
-	[HarmonyPatch(typeof(WorldInventory), "GetAmount")]
-	public static class WorldInventoryGetAmountPatch
-	{
-		public static bool Prefix(Tag tag, bool includeRelatedWorlds, ref float __result)
-		{
-			using var _ = Profiler.Scope();
-
-			if (!MultiplayerSession.InActiveSession || MultiplayerSession.IsHost) return true;
-
-			if (ResourceSyncer.ClientResources.TryGetValue(tag.Name, out float val))
-			{
-				__result = val;
-				return false; // Skip original method
-			}
-
-			return true;
+			DebugConsole.Log($"[ResourceSyncer] Broadcasting world inventory resync for {packet.Resources.Count} resources.");
+			PacketSender.SendToAllClients(packet);
 		}
 	}
 }

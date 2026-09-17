@@ -34,6 +34,7 @@ namespace ONI_Together
 							public static LocString TIMEOUT_SECONDS = "Connection Timeout (seconds)";
 							public static LocString PAUSE_SIM_ON_PLAYER_DISCONNECT = "Pause Simulation On Player Disconnect";
 							public static LocString SERVER_TICK_RATE = "Server Tick Rate";
+							public static LocString FORCE_INVENTORY_RESYNC_SECONDS = "World Inventory Resync Interval (seconds)";
 						}
                     }
 
@@ -83,6 +84,7 @@ namespace ONI_Together
                             public static LocString TIMEOUT_SECONDS = "How long the server waits (in seconds) for a response from a connecting or loading client before timing out.\nIncrease this if your friends take a long time to load into the game.\n\nMinimum: 30. (default: 30)";
                             public static LocString PAUSE_SIM_ON_PLAYER_DISCONNECT = "Automatically pauses the simulation when a player disconnects from the server.";
                             public static LocString SERVER_TICK_RATE = "How many times per second the server processes incoming network messages.\nHigher values reduce latency but increase CPU and bandwidth usage.\n\nRange: 20–128 TPS (default: 60)";
+                            public static LocString FORCE_INVENTORY_RESYNC_SECONDS = "How often (in seconds) the host broadcasts the true world inventory totals to clients to correct drift.\nSet to 0 to disable periodic resyncing.\n\nRange: 0, or 15–300 (default: 0)";
                         }
                     }
 
