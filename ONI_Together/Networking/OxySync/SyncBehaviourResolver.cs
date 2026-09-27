@@ -15,11 +15,19 @@ namespace ONI_Together.Networking.OxySync
                 return true;
 
             // Native fallback: behaviour may not have registered (e.g. spawned before manager).
-            if (NetworkIdentityRegistry.TryGetComponent<Shared.OxySync.NetworkBehaviour>(netId, out var native)
-                && native != null)
+            // Match by behaviour id: an object usually carries several NetworkBehaviours, and
+            // the first one is not the addressee (on a duplicant it is AnimSyncer, which has
+            // no sync vars, so a position update handed to it is dropped without a word).
+            if (NetworkIdentityRegistry.TryGet(netId, out var identity)
+                && !identity.IsNullOrDestroyed() && !identity.gameObject.IsNullOrDestroyed())
             {
-                behaviour = new NativeSyncBehaviour(native);
-                return true;
+                foreach (var native in identity.gameObject.GetComponents<Shared.OxySync.NetworkBehaviour>())
+                {
+                    if (native.IsNullOrDestroyed() || native.BehaviourId != behaviourId)
+                        continue;
+                    behaviour = new NativeSyncBehaviour(native);
+                    return true;
+                }
             }
 
             // API-bridge fallback: behaviour lives in the ONI_Together_API assembly.
