@@ -564,14 +564,19 @@ namespace ONI_Together.Networking.OxySync.Components
             int netId = behaviour.NetId;
             int id = behaviour.BehaviourId;
 
-            if (!_behaviourLookup.ContainsKey((netId, id)))
-                return;
-
-            do
+            // A destroyed behaviour's entry is evicted, not stepped over: the reloaded object
+            // must keep the id the other side addresses. Only a live collision moves it.
+            while (_behaviourLookup.TryGetValue((netId, id), out var existing))
             {
+                if (existing == null || existing.IsDestroyed || ReferenceEquals(existing, behaviour)
+                    || (existing is NativeSyncBehaviour a && behaviour is NativeSyncBehaviour b && a.Native == b.Native))
+                {
+                    _behaviourLookup.Remove((netId, id));
+                    break;
+                }
                 id++;
-            } while (_behaviourLookup.ContainsKey((netId, id)));
-            
+            }
+
             behaviour.BehaviourId = id;
         }
     }
