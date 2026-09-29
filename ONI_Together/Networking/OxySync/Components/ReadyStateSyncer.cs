@@ -15,6 +15,8 @@ namespace ONI_Together.Networking.OxySync.Components
 	{
 		public const float HEARTBEAT_INTERVAL = 2f;
 
+		public static readonly int SyncNetId = nameof(ReadyStateSyncer).GetHashCode();
+
 		public static ReadyStateSyncer? Instance { get; private set; }
 
 		[SyncVar(Hook = nameof(OnReadyStatusTextChanged), SendMode = (int)PacketSendMode.ReliableImmediate)]
@@ -28,7 +30,7 @@ namespace ONI_Together.Networking.OxySync.Components
 			base.OnSpawn();
 			Instance = this;
 			SyncInterval = 0.5f;
-			NetId = nameof(ReadyStateSyncer).GetHashCode();
+			NetId = SyncNetId;
 			InterestGroup = -1;
 		}
 

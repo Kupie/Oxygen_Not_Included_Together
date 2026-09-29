@@ -3,6 +3,8 @@ using System.IO;
 using ONI_Together.DebugTools;
 using ONI_Together.Networking;
 using ONI_Together.Networking.Overlay;
+using ONI_Together.Networking.OxySync.Components;
+using ONI_Together.Networking.OxySync.Packets;
 using ONI_Together.Misc;
 using Shared.Profiling;
 using UnityEngine;
@@ -23,7 +25,24 @@ namespace ONI_Together.Networking.Packets.Architecture
 		{
 			if (MultiplayerSession.IsHost) return true;
 			if (!Utils.IsInMenu()) return true;
-			return packet is IAllowedWithoutWorldPacket || packet is IModApiPacket;
+			return packet is IAllowedWithoutWorldPacket || packet is IModApiPacket || IsReadyStateSyncerTraffic(packet);
+		}
+
+		/// <summary>
+		/// The ready gate rides on OxySync packets (the status text SyncVar and the all-ready RPC of
+		/// ReadyStateSyncer, which lives on the persistent mod object and so exists in the frontend).
+		/// Those packet types are shared with every world behaviour and cannot carry the marker, so
+		/// only the ones addressed to ReadyStateSyncer's fixed NetId are let through.
+		/// </summary>
+		private static bool IsReadyStateSyncerTraffic(IPacket packet)
+		{
+			switch (packet)
+			{
+				case SyncVarBatchPacket batch: return batch.NetId == ReadyStateSyncer.SyncNetId;
+				case SyncVarPacket syncVar: return syncVar.NetId == ReadyStateSyncer.SyncNetId;
+				case ClientRpcPacket rpc: return rpc.NetId == ReadyStateSyncer.SyncNetId;
+				default: return false;
+			}
 		}
 
 		private static float _notReadySince = float.MaxValue;
