@@ -128,10 +128,9 @@ public static class SaveHelper
 	/// GameClient.Disconnect()/reconnect dance entirely, since the host isn't a client of
 	/// itself - it just reloads the scene directly.
 	///
-	/// UNVERIFIED: this is the first time the host reloads its own scene mid-session (only
-	/// clients have ever done this before). Whether the transport/server layer's live
-	/// connection and NetworkIdentity state actually survives LoadScreen.DoLoad on the host
-	/// has not been tested against a real running game with connected clients.
+	/// Tested: the transport/server connection survives LoadScreen.DoLoad on the host; connected
+	/// clients just sit paused until the host is back. NetworkIdentity state does not survive on
+	/// its own (see the registry clear below), and that part has not been tested in a live session.
 	/// </summary>
 	public static void RequestHostWorldReload(string path)
 	{
