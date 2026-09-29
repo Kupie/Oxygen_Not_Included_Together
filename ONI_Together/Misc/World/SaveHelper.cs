@@ -144,6 +144,13 @@ public static class SaveHelper
 		}
 
 		DebugConsole.Log($"[SaveHelper] Host reloading its own save for hard sync: {path}");
+
+		// Same per-world state the client reload paths drop. KMonoBehaviour.OnDestroy skips OnCleanUp
+		// while a scene loads, so NetworkIdentity never unregisters and RegisterExisting would keep the
+		// destroyed objects under the NetIds the reloaded world gets back from the save.
+		NetworkIdentityRegistry.Clear();
+		MultiplayerSession.PlayerCursors.Clear();
+
 		CloseWorldUiBeforeReload();
 		LoadScreen.DoLoad(path);
 	}
