@@ -7,6 +7,7 @@ using ONI_Together.Misc;
 using ONI_Together.Misc.World;
 using ONI_Together.Networking;
 using ONI_Together.Networking.Components;
+using ONI_Together.Networking.OxySync.Components;
 using ONI_Together.Networking.Packets.Architecture;
 using ONI_Together.Networking.States;
 using ONI_Together.Networking.Transport.Steamworks;
@@ -86,7 +87,7 @@ public static class SaveHelper
 		}
 
 		// Notify host before disconnecting so it can suppress leave/join messages
-		ReadyManager.SendReadyStatusPacket(ClientReadyState.Loading);
+		ReadyStateSyncer.Instance?.RequestSetReadyState(ClientReadyState.Loading);
 
 		GameClient.SetState(ClientState.LoadingWorld);
 		GameClient.CacheCurrentServer();
@@ -119,6 +120,32 @@ public static class SaveHelper
 		{
 			DebugConsole.LogWarning($"[SaveHelper] Could not close the world UI before reload: {ex.Message}");
 		}
+	}
+
+	/// <summary>
+	/// HOST ONLY - Reloads the host's own game from the given save path when
+	/// HostReloadsOnHardSync is enabled. Unlike RequestWorldLoad/LoadWorldSave, this skips the
+	/// GameClient.Disconnect()/reconnect dance entirely, since the host isn't a client of
+	/// itself - it just reloads the scene directly.
+	///
+	/// UNVERIFIED: this is the first time the host reloads its own scene mid-session (only
+	/// clients have ever done this before). Whether the transport/server layer's live
+	/// connection and NetworkIdentity state actually survives LoadScreen.DoLoad on the host
+	/// has not been tested against a real running game with connected clients.
+	/// </summary>
+	public static void RequestHostWorldReload(string path)
+	{
+		using var _ = Profiler.Scope();
+
+		if (!File.Exists(path))
+		{
+			DebugConsole.LogError($"[SaveHelper] Host reload requested but save file not found: {path}");
+			return;
+		}
+
+		DebugConsole.Log($"[SaveHelper] Host reloading its own save for hard sync: {path}");
+		CloseWorldUiBeforeReload();
+		LoadScreen.DoLoad(path);
 	}
 
 	public static void ShowMessageAndReturnToMainMenu(string msg)
@@ -462,7 +489,7 @@ public static class SaveHelper
 		}
 
 		// Notify host before disconnecting so it can suppress leave/join messages
-		ReadyManager.SendReadyStatusPacket(ClientReadyState.Loading);
+		ReadyStateSyncer.Instance?.RequestSetReadyState(ClientReadyState.Loading);
 
 		GameClient.SetState(ClientState.LoadingWorld);
 		GameClient.CacheCurrentServer();

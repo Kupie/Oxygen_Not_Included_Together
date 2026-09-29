@@ -685,6 +685,17 @@ namespace ONI_Together.UI
 				STRINGS.UI.CONFIGURATION.TOOLTIPS.HOST_SETTINGS.SERVER_SETTINGS.PAUSE_SIM_ON_PLAYER_DISCONNECT)
 				.SetOnFromCode(Configuration.Instance.Host.Server.PauseSimOnPlayerDisconnect);
 
+			AddOrGetLobbySettingsEntry_Toggle("HostReloadsOnHardSync", ToggleHostReloadsOnHardSyncSetting,
+				STRINGS.UI.CONFIGURATION.TITLES.HOST_SETTINGS.SERVER_SETTINGS.HOST_RELOADS_ON_HARD_SYNC,
+				STRINGS.UI.CONFIGURATION.TOOLTIPS.HOST_SETTINGS.SERVER_SETTINGS.HOST_RELOADS_ON_HARD_SYNC)
+				.SetOnFromCode(Configuration.Instance.Host.Server.HostReloadsOnHardSync);
+
+			AddOrGetLobbySettingsEntry_NumInput("ForceInventoryResyncSeconds", ChangeForceInventoryResyncSeconds,
+				STRINGS.UI.CONFIGURATION.TITLES.HOST_SETTINGS.SERVER_SETTINGS.FORCE_INVENTORY_RESYNC_SECONDS,
+				STRINGS.UI.CONFIGURATION.TOOLTIPS.HOST_SETTINGS.SERVER_SETTINGS.FORCE_INVENTORY_RESYNC_SECONDS,
+				placeholder: "0",
+				defaultValue: Configuration.Instance.Host.Server.ForceInventoryResyncSeconds);
+
 			var tickRateOptions = new List<FCycle.Option>
 			{
 				new("TPS_20", "20 TPS", ""),
@@ -732,6 +743,20 @@ namespace ONI_Together.UI
 		{
 			var config = Configuration.Instance;
 			config.Host.Server.PauseSimOnPlayerDisconnect = enabled;
+			config.Save();
+		}
+
+		void ToggleHostReloadsOnHardSyncSetting(bool enabled)
+		{
+			var config = Configuration.Instance;
+			config.Host.Server.HostReloadsOnHardSync = enabled;
+			config.Save();
+		}
+
+		void ChangeForceInventoryResyncSeconds(int seconds)
+		{
+			var config = Configuration.Instance;
+			config.ForceInventoryResyncSeconds = seconds; // wrapper property applies the existing 0-or-15..300 clamp
 			config.Save();
 		}
 
