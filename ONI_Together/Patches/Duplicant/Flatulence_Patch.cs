@@ -21,17 +21,18 @@ namespace ONI_Together.Patches.Duplicant
 			/// </summary>
 			/// <param name="data"></param>
 			/// <returns></returns>
+			// Prefix: it has to skip the original Emit, a Postfix would run after the fart already happened.
 			public static bool Prefix(Flatulence __instance)
 			{
 				using var _ = Profiler.Scope();
 
-				if(__instance.IsNullOrDestroyed() || __instance.gameObject.IsNullOrDestroyed())
+				if (__instance.IsNullOrDestroyed() || __instance.gameObject.IsNullOrDestroyed())
 					return false;
 
 				if (__instance.smi.IsNullOrDestroyed() || __instance.smi.IsNullOrStopped())
 					return false;
 
-				bool preview = (__instance.PrefabID() != GameTags.MinionSelectPreview);
+				bool preview = (__instance.PrefabID() == GameTags.MinionSelectPreview);
 				bool client = MultiplayerSession.IsClient;
 
 				if (client || preview)
